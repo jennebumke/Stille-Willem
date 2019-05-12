@@ -1030,7 +1030,7 @@ let msgTimestamp = (new Date()).getTime();
  */
 client.on('message', (msg) => {
     if(msg.author.bot) return;
-    if(msg.content == lastMsg.content && (new Date()).getTime() <= msgTimestamp+4000)
+    if(msg.content != "" && msg.content == lastMsg.content && (new Date()).getTime() <= msgTimestamp+4000)
     {
 	log(`Spam count: ${spamCount}`);
         spamCount += 1;
@@ -1042,7 +1042,7 @@ client.on('message', (msg) => {
 	    addToRolesDb(msg.channel,msg.author,"spam",(new Date()).getTime(),(new Date()).getTime()+30000,client,false,false);
 	}
     }
-    else if(msg.author.id == msg.author.id && (new Date()).getTime() <= msgTimestamp+1000)
+    else if(msg.content != "" && msg.author.id == msg.author.id && (new Date()).getTime() <= msgTimestamp+1000)
     {
 	log(`Spam count: ${spamCount}`);
         spamCount += 1;
@@ -1061,7 +1061,16 @@ client.on('message', (msg) => {
     
     if(msg.channel.id != logChannelId && msg.author.tag != client.user.tag)
     {
-	log(`${FgCyan}(#${msg.channel.name}) ${FgYellow}<${msg.author.tag}> ${Reset}`+msg.content);
+	if(msg.content != "")
+	{
+	    log(`${FgCyan}(#${msg.channel.name}) ${FgYellow}<${msg.author.tag}> ${Reset}`+msg.content);
+	}
+	else
+	{
+	    var urls = "";
+	    msg.attachments.forEach((attachment) => {urls += `${attachment.url} `});
+	    log(`${FgCyan}(#${msg.channel.name}) ${FgYellow}<${msg.author.tag}> ${Reset}${urls}`);
+	}
     }
 
     parseMessage(msg);
@@ -1082,28 +1091,56 @@ function parseMessage(msg) {
         }
     }
     else if ((/^[W|w]{1}[A|a]{1}[T|t]{1}[?]*$/).test(removeDiacritics(msg.content))) {
-        if(getRandomInt(1, chance) === chance) {
+        if(getRandomInt(1, chance+2) === chance) {
             msg.react('🍟');
         }
     }
     else if((/([B|b]{1}[E|e]{1}[L|l]{1}[G|g]{1}$|[B|b]{1}[E|e]{1}[L|l]{1}[G|g]{1}[I|i]{1})/).test(removeDiacritics(msg.content))) {
 	if(getRandomInt(1, chance) === chance && msg.channel.id != englishChannelId) {
-            sendMessage(msg.channel, `Makker, het is Zuid Nederlands!`);
+	    if(getRandomInt(1, chance) === chance)
+	    {
+        	sendMessage(msg.channel, `Makker, het is Zuid Nederlands!`);
+	    }
+	    else
+	    {
+            	msg.react('🇧🇪');
+	    }
         }
     }
     else if((/([\S]?[K|k]+[^a-zA-Z]?[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e]+[^a-zA-Z]?[R|r]+[a-zA-Z]+|[\S][K|k]+[^a-zA-Z]?[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e]+[^a-zA-Z]?[R|r]+|^[K|k]+[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e]+[^a-zA-Z]?[R|r]+$|[K|k]{1}[^a-zA-Z]?[A|a|E|e]{1}[^a-zA-Z]?[N|n]{1}[^a-zA-Z]?[K|k]{1}[^a-zA-Z]?[E|e]{1}[^a-zA-Z]+[R|r]{1})/).test(removeDiacritics(msg.content))) {
-        if(msg.channel.id != englishChannelId) {
-	    msg.react('378555121283629076');
+        if(getRandomInt(1, chance) === chance && msg.channel.id != englishChannelId) {
+	    if(getRandomInt(1, chance) === chance)
+	    {
+		msg.react('378555121283629076');
+	    }
+	    else
+	    {
+            	msg.react('♋');
+	    }
 	}
     }
     else if((/^[F|f]{1}$/).test(msg.content)) {
 	if(getRandomInt(1, chance) === chance) {
-            msg.react('🇫');
+	    if(getRandomInt(1, chance) === chance)
+	    {
+		sendMessage(msg.channel, `Rip`);
+	    }
+	    else
+	    {
+        	msg.react('🇫');
+	    }
         }
     }
     else if((/^[Z|z]{1}[E|e]{1}[G|g]{1}$/).test(removeDiacritics(msg.content))) {
 	if(getRandomInt(1, chance) === chance) {
-            sendMessage(msg.channel, `Makker`);
+	    if(getRandomInt(1, chance+100) === chance)
+	    {
+		sendMessage(msg.channel, `<@&563463164092612648>`);
+	    }
+	    else
+	    {
+        	sendMessage(msg.channel, `Makker`);
+	    }
         }
     }
     else if((/^[L|l]{1}[A|a]{1}[P|p]$/).test(removeDiacritics(msg.content))) {
