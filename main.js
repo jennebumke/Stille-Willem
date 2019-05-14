@@ -1456,7 +1456,7 @@ function giveRole(msg, args, role, takeMakkersRole) {
 
     for (let i = 0; i < members.length; i++) {
         const el = members[i];
-        let announcement = getAnnouncement(msg.author, el, `${el} heeft nu ${role}`, endTime, role.hexColor, reason);
+        let announcement = getAnnouncement(client.user, el, `${el} heeft nu ${role}`, endTime, role.hexColor, reason);
         let isInternational = false;
 
         if (hasRole(el, role.id)) {
