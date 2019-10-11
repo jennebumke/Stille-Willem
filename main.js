@@ -67,6 +67,11 @@ const inhetzonnetjeDuration = cfg.defaultduration.inhetzonnetje;
 const stamkroegverbodDuration = cfg.defaultduration.stamkroegverbod;
 const emoteloosDuration = cfg.defaultduration.emoteloos;
 
+/*missing IDs so far, todo: add them to cfg */
+let day = (new Date()).getTime();
+const oudMakkersId = '563463164092612648';
+const vaId = '469856365871890432';
+
 /**
  * Initialize variables.
  */
@@ -487,7 +492,7 @@ setInterval(() => {
 	//log((new Date(item.endTime)).getTime()-2400);
 	//log((new Date()).getTime());
         if ((new Date(item.endTime)).getTime()-2400 <= (new Date()).getTime()) {
-	    if (item.reason == "spam")
+	    if (item.reason == "_spam")
 	    {
 		client.channels.get(item.role).setRateLimitPerUser(0);
 		found = true;
@@ -517,6 +522,7 @@ setInterval(() => {
                     removeRole(member, stamkroegverbodRole);
                     role = stamkroegverbodRole;
                     announceFreedom = true;
+                    giveBackRole = true;
                     break;
                 case inhetzonnetjeId:
                     removeRole(member, inhetzonnetjeRole);
@@ -567,6 +573,26 @@ setInterval(() => {
         }
     });
 }, 10 * 1000);
+
+
+/* short and ugly description for stille makker interval setup, quick and dirty, not proud. */
+setInterval(() => {
+	if(day <= (new Date()).getTime()-(30*24*3600*1000)) {
+		day = (new Date()).getTime();
+		guild.members.forEach(member => {
+			if(member.lastMessage != null) {
+				if(member.lastMessage.createdTimestamp <= day-(30*24*3600*1000) && hasRole(member,makkersId) && !(member.hasPermission('MANAGE_ROLES')) && !(hasRole(member,vaId)) && !(hasRole(member,internationalId))){
+					member.addRole(oudMakkersId);
+					member.removeRole(makkersId);
+				}
+			}
+			else {
+				member.addRole(oudMakkersId);
+				member.removeRole(makkersId);
+			}
+		});
+	}
+}, 60 * 1000);
 
 /**
  * Ready event, triggers when the bot is loaded and logged in.
@@ -622,6 +648,7 @@ client.on('guildMemberRemove', (member) => {
     rolesDb.forEach((item, index, all) => {
         if (member.id == item.member && (item.role == kokosnootId || item.role == gekoloniseerdId)) {
             sendMessage(moderatieChannel, `${member} heeft de server met een strafrol verlaten! De rol was ${getRole(guild, item.role).name}.`);
+	    dbCleanup();
         }
     });
 });
@@ -961,6 +988,12 @@ PARAMETER    TYPE             DESCRIPTION
 oldMember    GuildMember      The member before the voice state update
 newMember    GuildMember      The member after the voice state update    */
 client.on("voiceStateUpdate", function(oldMember, newMember){
+    if(oldMember.user == undefined || newMember.user == undefined)
+    {
+	log(`undefined member`);
+	return;
+    }
+
     if(newMember.voiceChannelID != undefined && oldMember.voiceChannelID != newMember.voiceChannelID)
     {
         log(`${FgBlue}(${newMember.voiceChannel}) ${FgYellow}<${newMember.user.tag}> ${FgGreen}joined${Reset}`);
@@ -1039,7 +1072,7 @@ client.on('message', (msg) => {
 	    spamCount = 1;
 	    msg.channel.setRateLimitPerUser(5);
             sendMessage(msg.channel, `Zeg makker, doe eens even rustig aan!`);
-	    addToRolesDb(msg.channel,msg.author,"spam",(new Date()).getTime(),(new Date()).getTime()+30000,client,false,false);
+	    addToRolesDb(msg.channel,msg.author,"_spam",(new Date()).getTime(),(new Date()).getTime()+30000,client,false,false);
 	}
     }
     else if(msg.content != "" && msg.author.id == msg.author.id && (new Date()).getTime() <= msgTimestamp+1000)
@@ -1051,7 +1084,7 @@ client.on('message', (msg) => {
 	    spamCount = 1;
 	    msg.channel.setRateLimitPerUser(5);
             sendMessage(msg.channel, `Zeg makker, doe eens even rustig aan!`);
-	    addToRolesDb(msg.channel,msg.author,"spam",(new Date()).getTime(),(new Date()).getTime()+30000,client,false,false);
+	    addToRolesDb(msg.channel,msg.author,"_spam",(new Date()).getTime(),(new Date()).getTime()+30000,client,false,false);
 	}
     }
     else
@@ -1079,7 +1112,12 @@ client.on('message', (msg) => {
 });
 
 function parseMessage(msg) {
-    if (msg.content.charAt(0) == prefix && (msg.member.hasPermission('MANAGE_ROLES'))) {
+    if (hasRole(msg.member,oudMakkersId)) {
+	log(`updating role`);
+	msg.member.addRole(makkersId);
+	msg.member.removeRole(oudMakkersId);
+    }
+    else if (msg.content.charAt(0) == prefix && (msg.member.hasPermission('MANAGE_ROLES'))) {
         const args = msg.content.slice(prefix.length).split(/ +/);
 
 	validCommand = handleCommands(msg, args);
@@ -1108,7 +1146,9 @@ function parseMessage(msg) {
         }
     }
     else if((/([\S]?[K|k]+[^a-zA-Z]?[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e]+[^a-zA-Z]?[R|r]+[a-zA-Z]+|[\S][K|k]+[^a-zA-Z]?[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e]+[^a-zA-Z]?[R|r]+|^[K|k]+[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e]+[^a-zA-Z]?[R|r]+$|[K|k]{1}[^a-zA-Z]?[A|a|E|e]{1}[^a-zA-Z]?[N|n]{1}[^a-zA-Z]?[K|k]{1}[^a-zA-Z]?[E|e]{1}[^a-zA-Z]+[R|r]{1})/).test(removeDiacritics(msg.content))) {
-        if(getRandomInt(1, chance) === chance && msg.channel.id != englishChannelId) {
+        if(!(/[H|h|M|m][e]+[f]?[t]/).test(removeDiacritics(msg.content)) &&
+	   getRandomInt(1, chance) === chance && msg.channel.id != englishChannelId)
+	{
 	    if(getRandomInt(1, chance) === chance)
 	    {
 		msg.react('378555121283629076');
@@ -1207,7 +1247,7 @@ function handleCommands(msg, args) {
             takeRole(msg, args, gekoloniseerdRole, true, true);
             break;
         case 'stamkroegverbod':
-            giveRole(msg, args, stamkroegverbodRole, true);
+            giveRole(msg, args, stamkroegverbodRole, true, true);
             break;
         case 'stamkroegtoelating':
             takeRole(msg, args, stamkroegverbodRole, true, true);
@@ -1456,7 +1496,7 @@ function giveRole(msg, args, role, takeMakkersRole) {
 
     for (let i = 0; i < members.length; i++) {
         const el = members[i];
-        let announcement = getAnnouncement(client.user, el, `${el} heeft nu ${role}`, endTime, role.hexColor, reason);
+        let announcement = getAnnouncement(msg.author, el, `${el} heeft nu ${role}`, endTime, role.hexColor, reason);
         let isInternational = false;
 
         if (hasRole(el, role.id)) {
@@ -1645,7 +1685,7 @@ function getDuration(msg, args, role) {
     let time;
     let duration;
 
-    if ((/^[0-9]+[d|u|m|s]{1}$/).test(args[args.length - 1])) {
+    if ((/^[0-9]+[d|u|m]{1}$/).test(args[args.length - 1])) {
         useTime = true;
         time = args[args.length - 1];
     }
@@ -1653,7 +1693,7 @@ function getDuration(msg, args, role) {
         useTimestamp = true;
         time = args[args.length - 1];
     }
-    else if ((/[0-9]+[d|u|m|s]{1}/).test(args[args.length - 1])) {
+    else if ((/[0-9]+[d|u|m]{1}/).test(args[args.length - 1])) {
         sendMessage(msg.channel, `\`${args[args.length - 1]}\` is geen geldige tijd.`);
         return null;
     }
@@ -1690,9 +1730,8 @@ function calculateDuration(time) {
         case 'u':
             return duration;
         case 'm':
+	    if(duration == 1) duration = 2;
             return duration / 60;
-        case 's':
-            return duration / 60 / 60;
         default:
             log("Something went wrong :(");
             return 0;
@@ -1994,8 +2033,7 @@ function getDbContent(msg, args) {
  */
 function dbCleanup(msg) {
     let deletedEntries = 0;
-
-    sendErrorMessage(msg.channel, `De grote schoonmaak is begonnen!`);
+    if(msg) sendErrorMessage(msg.channel, `De grote schoonmaak is begonnen!`);
 
     rolesDb.forEach((item, index, all) => {
         const member = getMemberFromId(guild, item.member);
@@ -2009,7 +2047,7 @@ function dbCleanup(msg) {
                 });;
             }).catch((err) => {
                 console.error("Error deleting announcement: ", err);
-                sendMessage(logChannel, getErrorLog(msg.author, msg.content, `De announcement kon niet verwijderd worden.`));
+                if(msg) sendMessage(logChannel, getErrorLog(msg.author, msg.content, `De announcement kon niet verwijderd worden.`));
             });
             deletedEntries++;
         }
@@ -2022,14 +2060,14 @@ function dbCleanup(msg) {
                 });;
             }).catch((err) => {
                 console.error("Error deleting announcement: ", err);
-                sendMessage(logChannel, getErrorLog(msg.author, msg.content, `De announcement kon niet verwijderd worden.`));
+                if(msg) sendMessage(logChannel, getErrorLog(msg.author, msg.content, `De announcement kon niet verwijderd worden.`));
             });
             deletedEntries++;
         }
     });
 
     const deletedStr = deletedEntries == 1 ? `is ${deletedEntries} item` : `zijn ${deletedEntries} items`;
-    sendErrorMessage(msg.channel, `De grote schoonmaak is klaar. Er ${deletedStr} weggeveegd.`);
+    if(msg) sendErrorMessage(msg.channel, `De grote schoonmaak is klaar. Er ${deletedStr} weggeveegd.`);
 }
 
 function log(str) {
