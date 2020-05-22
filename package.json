@@ -4,8 +4,9 @@
   "description": "",
   "main": "main.js",
   "dependencies": {
+    "@discordjs/opus": "^0.3.2",
     "discord": "^0.8.2",
-    "discord.js": "git://github.com/discordjs/discord.js.git#11.5-dev",
+    "discord.js": "^12.2.0",
     "latest-version": "^5.1.0"
   },
   "devDependencies": {},

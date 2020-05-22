@@ -4,12 +4,10 @@
         "ontkokosnoot": "Haalt de Kokosnoot rol van één of meerdere gebruikers weg.",
         "koloniseer": "Geeft de Gekoloniseerd rol aan één of meerdere gebruikers.",
         "ontkoloniseer": "Haalt de Gekoloniseerd rol van één of meerdere gebruikers weg.",
-        "stamkroegverbod": "Geeft de Stamkroegverbod rol aan één of meerdere gebruikers.",
-        "stamkroegtoelating": "Haalt de Stamkroegverbod rol van één of meerdere gebruikers weg.",
+        "babbelbakverbod": "Geeft de Stamkroegverbod rol aan één of meerdere gebruikers.",
+        "babbelbaktoelating": "Haalt de Stamkroegverbod rol van één of meerdere gebruikers weg.",
         "inhetzonnetje": "Geeft de In het Zonnetje rol aan één of meerdere gebruikers.",
-        "uithetzonnetje": "Haalt de In het Zonnetje rol van één of meerdere gebruikers weg.",
-        "emoteloos": "Geeft de Emoteloos rol aan één of meerdere gebruikers.",
-        "emoterijk": "Haalt de Emoteloos rol van één of meerdere gebruikers weg."
+        "uithetzonnetje": "Haalt de In het Zonnetje rol van één of meerdere gebruikers weg."
     },
     "databasecommands": {
         "dbcontents": "Laat de inhoud van de database zien.",

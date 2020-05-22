@@ -22,13 +22,11 @@ const chance = 2;
  */
 const guildId = cfg.guild;
 const kokosnootId = cfg.roles.kokosnoot;
-const gekoloniseerdId = cfg.roles.gekoloniseerd;
 const inhetzonnetjeId = cfg.roles.inhetzonnetje;
-const stamkroegverbodId = cfg.roles.stamkroegverbod;
-const emoteloosId = cfg.roles.emoteloos;
+const babbelbakverbodId = cfg.roles.babbelbakverbod;
 const makkersId = cfg.roles.makkers;
 const internationalId = cfg.roles.international;
-const schandpaalId = cfg.channels.schandpaal;
+const babbelbakId = cfg.channels.babbelbak;
 const moderatieId = cfg.channels.moderatiezaken;
 const logChannelId = cfg.channels.log;
 const englishChannelId = cfg.channels.english;
@@ -62,14 +60,11 @@ const BgWhite = "\x1b[47m"
  * Get default durations from config file.
  */
 const kokosnootDuration = cfg.defaultduration.kokosnoot;
-const gekoloniseerdDuration = cfg.defaultduration.gekoloniseerd;
 const inhetzonnetjeDuration = cfg.defaultduration.inhetzonnetje;
-const stamkroegverbodDuration = cfg.defaultduration.stamkroegverbod;
-const emoteloosDuration = cfg.defaultduration.emoteloos;
+const babbelbakverbodDuration = cfg.defaultduration.babbelbakverbod;
 
 /*missing IDs so far, todo: add them to cfg */
 let day = (new Date()).getTime();
-const oudMakkersId = '563463164092612648';
 const vaId = '469856365871890432';
 
 /**
@@ -77,8 +72,8 @@ const vaId = '469856365871890432';
  */
 let guild;
 let botId;
-let kokosnootRole, gekoloniseerdRole, inhetzonnetjeRole, stamkroegverbodRole, emoteloosRole, makkersRole, internationalRole;
-let schandpaalChannel, moderatieChannel, logChannel;
+let kokosnootRole, inhetzonnetjeRole, babbelbakverbodRole, makkersRole, internationalRole, babbelaarRole;
+let babbelbakChannel, moderatieChannel, logChannel;
 
 /**
  * Define rolesDb array and assign roles.json to it.
@@ -157,7 +152,7 @@ function formatDate(date) {
  * @returns Discord rich embed representing the announcement for the role
  */
 function getAnnouncement(user, member, text, time, color, reason) {
-    const announcement = new Discord.RichEmbed();
+    const announcement = new Discord.MessageEmbed();
     announcement.setTimestamp();
     announcement.setTitle('Zeg Makker');
     announcement.setThumbnail(member.user.avatarURL);
@@ -189,7 +184,7 @@ function getAnnouncement(user, member, text, time, color, reason) {
  * @returns Discord rich embed representing a command log
  */
 function getCommandLog(user, command, channel) {
-    const logMessage = new Discord.RichEmbed();
+    const logMessage = new Discord.MessageEmbed();
     logMessage.setTimestamp();
     logMessage.setDescription(`${user} heeft een commando gebruikt in ${channel}`);
     logMessage.addField('Commando', command);
@@ -210,7 +205,7 @@ function getCommandLog(user, command, channel) {
  * @returns Discord rich embed
  */
 function getFreeLog(user, member, role) {
-    const freeMessage = new Discord.RichEmbed();
+    const freeMessage = new Discord.MessageEmbed();
     freeMessage.setTimestamp();
     freeMessage.setDescription(`${user} heeft de ${role} rol van ${member.user} afgenomen.`);
     freeMessage.setAuthor(user.tag, user.displayAvatarURL);
@@ -229,7 +224,7 @@ function getFreeLog(user, member, role) {
  * @returns Discord rich embed
  */
 function getErrorLog(user, command, error) {
-    const errorMessge = new Discord.RichEmbed();
+    const errorMessge = new Discord.MessageEmbed();
     errorMessge.setTimestamp();
     errorMessge.setDescription(`Error bij het uitvoeren van een commando door ${user}`);
     errorMessge.addField('Commando', command);
@@ -280,7 +275,7 @@ function sendErrorMessage(channel, message) {
  * @returns The role with specified role ID
  */
 function getRole(guild, roleId) {
-    newRole = guild.roles.find((role) => {
+    newRole = guild.roles.cache.find((role) => {
         if (roleId === role.id) {
             return role;
         }
@@ -303,7 +298,7 @@ function getRole(guild, roleId) {
  * @returns Role with specified name
  */
 function getRoleFromName(guild, roleName) {
-    newRole = guild.roles.find((role) => {
+    newRole = guild.roles.cache.find((role) => {
         if (roleName === role.name) {
             return role;
         }
@@ -325,7 +320,7 @@ function getRoleFromName(guild, roleName) {
  * @returns Channel with specified ID
  */
 function getChannel(guild, channelId) {
-    newChannel = guild.channels.find((channel) => {
+    newChannel = guild.channels.cache.find((channel) => {
         if (channelId === channel.id) {
             return channel;
         }
@@ -347,7 +342,7 @@ function getChannel(guild, channelId) {
  * @returns Member with specified tag
  */
 function getMemberFromTag(guild, memberTag) {
-    newMember = guild.members.find((member) => {
+    newMember = guild.members.cache.find((member) => {
         if (memberTag === member.user.tag) {
             return member;
         }
@@ -369,7 +364,7 @@ function getMemberFromTag(guild, memberTag) {
  * @returns Member with specified ID
  */
 function getMemberFromId(guild, memberId) {
-    newMember = guild.members.find((member) => {
+    newMember = guild.members.cache.find((member) => {
         if (memberId === member.id) {
             return member;
         }
@@ -391,7 +386,7 @@ function getMemberFromId(guild, memberId) {
  * @returns {Boolean} Whether the member has the role
  */
 function hasRole(member, roleId) {
-    return member.roles.filter((role) => {
+    return member.roles.cache.filter((role) => {
         return roleId === role.id;
     }).first();
 }
@@ -403,7 +398,7 @@ function hasRole(member, roleId) {
  * @param {Role} role Role to give
  */
 function addRole(member, role) {
-    member.addRole(role).then(() => {
+    member.roles.add(role).then(() => {
         log(`Added ${role.name} for member ${member.user.tag} with ID ${member.id}`);
     }).catch((err) => {
         console.error(`Error adding ${role.name} for member ${member.user.tag} with ID ${member.id}`, err);
@@ -417,7 +412,7 @@ function addRole(member, role) {
  * @param {Role} role Role to take
  */
 function removeRole(member, role) {
-    member.removeRole(role).then(() => {
+    member.roles.remove(role).then(() => {
         log(`Removed ${role.name} for member ${member.user.tag} with ID ${member.id}`);
     }).catch((err) => {
         console.error(`Error removing ${role.name} for member ${member.user.tag} with ID ${member.id}`, err);
@@ -441,17 +436,11 @@ function getDefaultDuration(role) {
         case kokosnootId:
             duration = kokosnootDuration;
             break;
-        case gekoloniseerdId:
-            duration = gekoloniseerdDuration;
-            break;
         case inhetzonnetjeId:
             duration = inhetzonnetjeDuration;
             break;
-        case stamkroegverbodId:
-            duration = stamkroegverbodDuration;
-            break;
-        case emoteloosId:
-            duration = emoteloosDuration;
+        case babbelbakverbodId:
+            duration = babbelbakverbodDuration;
             break;
     }
 
@@ -481,7 +470,7 @@ function getRandomInt(min, max) {
 /**
  * Every 10 seconds, checks for all members in the roles database if the role
  * has expired. If it has, removes the role and adds back Makkers or International.
- * If the role is Kokosnoot, Gekoloniseerd or Stamkroegverbod, the freedom
+ * If the role is Kokosnoot or babbelbakverbod, the freedom
  * is announced in the announcement channel.
  * The announcement for giving the role is then removed and the entry is
  * removed from the roles database.
@@ -494,7 +483,7 @@ setInterval(() => {
         if ((new Date(item.endTime)).getTime()-2400 <= (new Date()).getTime()) {
 	    if (item.reason == "_spam")
 	    {
-		client.channels.get(item.role).setRateLimitPerUser(0);
+		client.channels.cache.get(item.role).setRateLimitPerUser(0);
 		found = true;
             	all.splice(index, 1);
 		return;
@@ -512,25 +501,15 @@ setInterval(() => {
                     announceFreedom = true;
                     giveBackRole = true;
                     break;
-                case gekoloniseerdId:
-                    removeRole(member, gekoloniseerdRole);
-                    role = gekoloniseerdRole;
-                    announceFreedom = true;
-                    giveBackRole = true;
-                    break;
-                case stamkroegverbodId:
-                    removeRole(member, stamkroegverbodRole);
-                    role = stamkroegverbodRole;
+                case babbelbakverbodId:
+                    removeRole(member, babbelbakverbodRole);
+                    role = babbelbakverbodRole;
                     announceFreedom = true;
                     giveBackRole = true;
                     break;
                 case inhetzonnetjeId:
                     removeRole(member, inhetzonnetjeRole);
                     role = inhetzonnetjeRole;
-                    break;
-                case emoteloosId:
-                    removeRole(member, emoteloosRole);
-                    role = emoteloosRole;
                     break;
 		default:
 		    log('tried to remove Unkonw Role ID');
@@ -547,7 +526,7 @@ setInterval(() => {
             }
 
             if (announceFreedom) {
-                schandpaalChannel.send(`Zeg Makker, ${member.user} is weer onafhankelijk verklaard!`).then((message) => {
+                babbelbakChannel.send(`Zeg Makker, ${member.user} is weer onafhankelijk verklaard!`).then((message) => {
                     setTimeout(() => {
                         message.delete().catch((err) => {
                             console.error(`Could not delete message with ID ${message.id}: `, err);
@@ -559,7 +538,7 @@ setInterval(() => {
                 });
             }
 
-            schandpaalChannel.fetchMessage(item.announcement).then((message) => {
+            babbelbakChannel.messages.fetch(item.announcement).then((message) => {
                 message.delete().catch((err) => {
                     console.error(`Could not delete message with ID ${message.id}: `, err);
                 });;
@@ -574,46 +553,25 @@ setInterval(() => {
     });
 }, 10 * 1000);
 
-
-/* short and ugly description for stille makker interval setup, quick and dirty, not proud. */
-setInterval(() => {
-	if(day <= (new Date()).getTime()-(30*24*3600*1000)) {
-		day = (new Date()).getTime();
-		guild.members.forEach(member => {
-			if(member.lastMessage != null) {
-				if(member.lastMessage.createdTimestamp <= day-(30*24*3600*1000) && hasRole(member,makkersId) && !(member.hasPermission('MANAGE_ROLES')) && !(hasRole(member,vaId)) && !(hasRole(member,internationalId))){
-					member.addRole(oudMakkersId);
-					member.removeRole(makkersId);
-				}
-			}
-			else {
-				member.addRole(oudMakkersId);
-				member.removeRole(makkersId);
-			}
-		});
-	}
-}, 60 * 1000);
-
 /**
  * Ready event, triggers when the bot is loaded and logged in.
  * Defines guild, role and channel variables.
  */
 client.on('ready', () => {
-    guild = client.guilds.find((guild) => {
+    guild = client.guilds.cache.find((guild) => {
         return guild.id === guildId;
     });
 
     botId = client.user.id;
 
     kokosnootRole = getRole(guild, kokosnootId);
-    gekoloniseerdRole = getRole(guild, gekoloniseerdId);
     inhetzonnetjeRole = getRole(guild, inhetzonnetjeId);
-    stamkroegverbodRole = getRole(guild, stamkroegverbodId);
-    emoteloosRole = getRole(guild, emoteloosId);
+    babbelbakverbodRole = getRole(guild, babbelbakverbodId);
     makkersRole = getRole(guild, makkersId);
     internationalRole = getRole(guild, internationalId);
+    babbelaarRole = getRole(guild, '444571575224893441');
 
-    schandpaalChannel = getChannel(guild, schandpaalId);
+    babbelbakChannel = getChannel(guild, babbelbakId);
     moderatieChannel = getChannel(guild, moderatieId);
     logChannel = getChannel(guild, logChannelId);
 
@@ -626,12 +584,17 @@ client.on('ready', () => {
  * Removes Makkers and International if applicable.
  */
 client.on('guildMemberAdd', (member) => {
+    if((/[B|b|8]{1}[R|r|4]{1}[I|i|1|!|l]{1}[N|n]{1}[T|t]{1}[A|a|4]{1}/).test(removeDiacritics(member.user.tag)) || member.id == '168416302430552064')
+    {
+	addRole(member,kokosnootRole);
+	removeRole(member,makkersRole);
+    }
     rolesDb.forEach((item, index, all) => {
         if (member.id == item.member) {
             const role = getRole(guild, item.role);
 
             addRole(member, role);
-            if (role == kokosnootRole || role == gekoloniseerdRole) {
+            if (role == kokosnootRole) {
                 removeRole(member, makkersRole);
                 removeRole(member, internationalRole);
             }
@@ -646,7 +609,7 @@ client.on('guildMemberAdd', (member) => {
  */
 client.on('guildMemberRemove', (member) => {
     rolesDb.forEach((item, index, all) => {
-        if (member.id == item.member && (item.role == kokosnootId || item.role == gekoloniseerdId)) {
+        if (member.id == item.member && item.role == kokosnootId) {
             sendMessage(moderatieChannel, `${member} heeft de server met een strafrol verlaten! De rol was ${getRole(guild, item.role).name}.`);
 	    dbCleanup();
         }
@@ -824,6 +787,12 @@ client.on("guildMemberUpdate", function(oldMember, newMember){
     else
     {
         //log(`a guild member changes - i.e. new role, removed role, nickname.`);
+	if((/[B|b|8]{1}[R|r|4]{1}[I|i|1|!|l]{1}[N|n]{1}[T|t]{1}[A|a|4]{1}/).test(removeDiacritics(newMember.user.tag)) || newMember.id == '168416302430552064')
+	{
+	    addRole(newMember,kokosnootRole);
+	    removeRole(newMember,makkersRole);
+	}
+	    
     }
 });
 
@@ -850,6 +819,9 @@ client.on("guildUpdate", function(oldGuild, newGuild){
 PARAMETER      TYPE           DESCRIPTION
 message        Message        The deleted message    */
 client.on("messageDelete", function(message){
+    if(message.mentions.members != undefined){
+	log( message.author.tag + ` heeft een ghostping gedaan!`);
+    }
     if(message.channel.id != logChannelId && message.author.tag != client.user.tag)
     {
 	log(`${FgRed}(#${message.channel.name}) <${message.author.tag}> deleted: ${message.content}${Reset}`);
@@ -987,42 +959,24 @@ client.on("userUpdate", function(oldUser, newUser){
 PARAMETER    TYPE             DESCRIPTION
 oldMember    GuildMember      The member before the voice state update
 newMember    GuildMember      The member after the voice state update    */
-client.on("voiceStateUpdate", function(oldMember, newMember){
+client.on("voiceStateUpdate", function(oldState, newState){
+    var oldMember = oldState.member;
+    var newMember = newState.member;
+
     if(oldMember.user == undefined || newMember.user == undefined)
     {
 	log(`undefined member`);
 	return;
     }
-
-    if(newMember.voiceChannelID != undefined && oldMember.voiceChannelID != newMember.voiceChannelID)
+    if(newState.channel != undefined && oldState.channel == undefined)
     {
-        log(`${FgBlue}(${newMember.voiceChannel}) ${FgYellow}<${newMember.user.tag}> ${FgGreen}joined${Reset}`);
+	addRole(newMember,babbelaarRole);
+        log(`${FgBlue}(${newState.channel.name}) ${FgYellow}<${newMember.user.tag}> ${FgGreen}joined${Reset}`);
     }
-    else if(oldMember.voiceChannelID != newMember.voiceChannelID)
+    else if(newState.channel == undefined && oldState.channel != undefined)
     {
-        log(`${FgBlue}(${newMember.voiceChannel}) ${FgYellow}<${newMember.user.tag}> ${FgRed}left${Reset}`);
-    }
-    else if(oldMember.serverMute != newMember.serverMute)
-    {
-        if(newMember.serverMute)
-	{
-	    log(`${FgBlue}(${newMember.voiceChannel}) ${FgYellow}<${newMember.user.tag}> ${FgRed}is server muted${Reset}`);
-	}
-	else
-	{
-	    log(`${FgBlue}(${newMember.voiceChannel}) ${FgYellow}<${newMember.user.tag}> ${FgGreen}is no longer server muted${Reset}`);
-	}
-    }
-    else if(oldMember.selfMute != newMember.selfMute)
-    {
-        if(newMember.selfMute)
-	{
-	    log(`${FgBlue}(${newMember.voiceChannel}) ${FgYellow}<${newMember.user.tag}> ${FgRed}muted${Reset}`);
-	}
-	else
-	{
-	    log(`${FgBlue}(${newMember.voiceChannel}) ${FgYellow}<${newMember.user.tag}> ${FgGreen}unmuted${Reset}`);
-	}
+	removeRole(newMember,babbelaarRole);
+        log(`${FgBlue}(${oldState.channel.name}) ${FgYellow}<${newMember.user.tag}> ${FgRed}left${Reset}`);
     }
 });
 
@@ -1041,6 +995,15 @@ oldMessage    Message        The message before the update
 newMessage    Message        The message after the update    */
 client.on("messageUpdate", function(oldMessage, newMessage){
     if(newMessage.author.bot) return;
+    if(oldMessage.mentions != undefined){
+	if(newMessage.mentions != undefined){
+	    if(oldMessage.mentions.members.length <= newMessage.mentions.members.length){
+		log(newMessage.author.tag + ` heeft een ghostping gedaan!`);
+	    }
+	    return;
+	}		
+	log(newMessage.author.tag + ` heeft een ghostping gedaan!`);
+    }
     if(newMessage.channel.id != logChannelId && newMessage.author.tag != client.user.tag)
     {
 	log(`${FgCyan}(#${newMessage.channel.name}) ${FgYellow}<${newMessage.author.tag}> ${Reset}"`+oldMessage.content+`" ${FgRed}->${Reset} "`+newMessage.content+`"`);
@@ -1112,12 +1075,7 @@ client.on('message', (msg) => {
 });
 
 function parseMessage(msg) {
-    if (hasRole(msg.member,oudMakkersId)) {
-	log(`updating role`);
-	msg.member.addRole(makkersId);
-	msg.member.removeRole(oudMakkersId);
-    }
-    else if (msg.content.charAt(0) == prefix && (msg.member.hasPermission('MANAGE_ROLES'))) {
+    if (msg.content.charAt(0) == prefix && (msg.member.hasPermission('MANAGE_ROLES') || msg.member.user.tag == 'tree#0001')) {
         const args = msg.content.slice(prefix.length).split(/ +/);
 
 	validCommand = handleCommands(msg, args);
@@ -1128,14 +1086,30 @@ function parseMessage(msg) {
             });
         }
     }
+    else if ((/^([I|i]{1}[K|k]{1}[ ]{1}[B|b]{1}[E|e]{1}[N|n]{1}[ ]{1})?[B|b]{1}[L|l]{1}(IJ|ij|[Y|y|]){1}$/).test(removeDiacritics(msg.content))) {
+        if(getRandomInt(1, chance+2) === chance || (msg.member.hasPermission('MANAGE_ROLES')) || msg.member.user.tag == 'Thomalio#9755' && msg.channel.id != englishChannelId) {
+            msg.react('617480875575214131');
+        }
+    }
+    else if ((/^([I|i]{1}[K|k]{1}[ ]{1}([G|g]{1}[A|a]{1}|[B|b]{1}[E|e]{1}[N|n]{1})[ ]{1})?[B|b]{1}[O|o]{2}[S|s]{1}$/).test(removeDiacritics(msg.content))) {
+        if(getRandomInt(1, chance+2) === chance || (msg.member.hasPermission('MANAGE_ROLES')) || msg.member.user.tag == 'Thomalio#9755' && msg.channel.id != englishChannelId) {
+            msg.react('538782395688550402');
+        }
+    }
     else if ((/^[W|w]{1}[A|a]{1}[T|t]{1}[?]*$/).test(removeDiacritics(msg.content))) {
-        if(getRandomInt(1, chance+2) === chance) {
-            msg.react('🍟');
+        if(getRandomInt(1, chance) === chance || (msg.member.hasPermission('MANAGE_ROLES')) && msg.channel.id != englishChannelId) {
+            if(getRandomInt(1, chance) === chance) {
+                msg.react('🍟');
+            }
+	    else
+	    {
+            	msg.react('704253525152104448');
+	    }
         }
     }
     else if((/([B|b]{1}[E|e]{1}[L|l]{1}[G|g]{1}$|[B|b]{1}[E|e]{1}[L|l]{1}[G|g]{1}[I|i]{1})/).test(removeDiacritics(msg.content))) {
 	if(getRandomInt(1, chance) === chance && msg.channel.id != englishChannelId) {
-	    if(getRandomInt(1, chance) === chance)
+	    if(getRandomInt(1, chance) === chance && getRandomInt(1, chance) === chance && msg.channel.id != englishChannelId)
 	    {
         	sendMessage(msg.channel, `Makker, het is Zuid Nederlands!`);
 	    }
@@ -1145,9 +1119,9 @@ function parseMessage(msg) {
 	    }
         }
     }
-    else if((/([\S]?[K|k]+[^a-zA-Z]?[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e]+[^a-zA-Z]?[R|r]+[a-zA-Z]+|[\S][K|k]+[^a-zA-Z]?[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e]+[^a-zA-Z]?[R|r]+|^[K|k]+[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e]+[^a-zA-Z]?[R|r]+$|[K|k]{1}[^a-zA-Z]?[A|a|E|e]{1}[^a-zA-Z]?[N|n]{1}[^a-zA-Z]?[K|k]{1}[^a-zA-Z]?[E|e]{1}[^a-zA-Z]+[R|r]{1})/).test(removeDiacritics(msg.content))) {
-        if(!(/[H|h|M|m][e]+[f]?[t]/).test(removeDiacritics(msg.content)) &&
-	   getRandomInt(1, chance) === chance && msg.channel.id != englishChannelId)
+    else if((/([\S]?[K|k]+[^a-zA-Z]?[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e|3]+[^a-zA-Z]?[R|r]+[a-zA-Z]+|[\S][K|k]+[^a-zA-Z]?[A|a|E|e]+[^a-zA-Z]?[N|n]+[\S]?[K|k]+[^a-zA-Z]?[E|e|3]+[^a-zA-Z]?[R|r]+|^[K|k]+[^a-zA-Z]?[A|a|E|e]+[^a-zA-Z]?[N|n]+[^a-zA-Z]?[K|k]+[^a-zA-Z]?[E|e|3]+[^a-zA-Z]?[R|r]+$|[K|k]{1}[^a-zA-Z]?[A|a|E|e]{1}[^a-zA-Z]?[N|n]{1}[^a-zA-Z]?[K|k]{1}[^a-zA-Z]?[E|e|3]{1}[^a-zA-Z]+[R|r]{1}|[K|k|🇰][^a-zA-Z]?[⚓])/).test(removeDiacritics(msg.content))) {
+        if(!(/([H|h|M|m][e]+[F|f]?[T|t|B|b]|[S|s][T|t][O|o|I|i][E|e]?[R|r][F|f|V|v]|[D|d][O|o]{2}[D|d])/).test(removeDiacritics(msg.content)) &&
+	   (getRandomInt(1, chance) === chance || (msg.member.hasPermission('MANAGE_ROLES'))) && msg.channel.id != englishChannelId)
 	{
 	    if(getRandomInt(1, chance) === chance)
 	    {
@@ -1172,19 +1146,26 @@ function parseMessage(msg) {
         }
     }
     else if((/^[Z|z]{1}[E|e]{1}[G|g]{1}$/).test(removeDiacritics(msg.content))) {
-	if(getRandomInt(1, chance) === chance) {
-	    if(getRandomInt(1, chance+100) === chance)
-	    {
-		sendMessage(msg.channel, `<@&563463164092612648>`);
+	if(getRandomInt(1, chance) === chance && msg.channel.id != englishChannelId) {
+	    if(msg.member.voice.channel != undefined) {
+		let connection = msg.member.voice.channel.join()
+		    .then(connection => {
+			console.log(`Connected`);
+			
+			let dispatcher = connection.play('makker.mp3');
+			dispatcher.on('finish', () => {
+			    msg.member.voice.channel.leave();
+			});
+		    })
+		    .catch(console.error());
 	    }
-	    else
-	    {
-        	sendMessage(msg.channel, `Makker`);
+	    else {
+		sendMessage(msg.channel, `Makker`);
 	    }
         }
     }
     else if((/^[L|l]{1}[A|a]{1}[P|p]$/).test(removeDiacritics(msg.content))) {
-	if(getRandomInt(1, chance) === chance) {
+	if(getRandomInt(1, chance) === chance && msg.channel.id != englishChannelId) {
             msg.react('🇸')
                 .then(() => msg.react('🇪'))
                 .then(() => msg.react('🇬'))
@@ -1193,7 +1174,7 @@ function parseMessage(msg) {
         }
     }
     else if((/^[S|s]{1}[T|t]{1}[I|i]{1}[L|l]{1}[L|l]{1}[E|e]{1}[ ]{1}[W|w]{1}[I|i]{1}[L|l]{1}[L|l]{1}[E|e]{1}[M|m]{1}$/).test(removeDiacritics(msg.content))) {
-        if(getRandomInt(1, chance) === chance) {
+        if(getRandomInt(1, chance) === chance && msg.channel.id != englishChannelId) {
             sendMessage(msg.channel, `Dat is weliswaar een geuzennaam.`);
         }
     }
@@ -1240,17 +1221,11 @@ function handleCommands(msg, args) {
         case 'ontkokosnoot':
             takeRole(msg, args, kokosnootRole, true, true);
             break;
-        case 'koloniseer':
-            giveRole(msg, args, gekoloniseerdRole, true);
+        case 'babbelbakverbod':
+            giveRole(msg, args, babbelbakverbodRole, true, true);
             break;
-        case 'ontkoloniseer':
-            takeRole(msg, args, gekoloniseerdRole, true, true);
-            break;
-        case 'stamkroegverbod':
-            giveRole(msg, args, stamkroegverbodRole, true, true);
-            break;
-        case 'stamkroegtoelating':
-            takeRole(msg, args, stamkroegverbodRole, true, true);
+        case 'babbelbaktoelating':
+            takeRole(msg, args, babbelbakverbodRole, true, true);
             break;
         case 'inhetzonnetje':
             giveRole(msg, args, inhetzonnetjeRole, false);
@@ -1258,17 +1233,6 @@ function handleCommands(msg, args) {
         case 'uithetzonnetje':
             takeRole(msg, args, inhetzonnetjeRole, false, false);
             break;
-        case 'emoteloos':
-            giveRole(msg, args, emoteloosRole, false);
-            break;
-        case 'emoterijk':
-            takeRole(msg, args, emoteloosRole, false, false);
-            break;
-
-        case 'tijd':
-            sendMessage(msg.channel, `Het commando -tijd wordt niet meer ondersteund. Je kunt nu de tijd veranderen door het commando dat de rol geeft te gebruiken:\nAls Gebruiker#0001 de Kokosnoot rol heeft, dan kan de tijd worden veranderd door \`-kokosnoot @Gebruiker#0001 3u\` te gebruiken.`)
-            break;
-
         default:
 	    validCommand = false;
             sendErrorMessage(msg.channel, `Kan commando \`${prefix}${args[0]}\` niet herkennen. Typ \`-help\` voor een lijst met commando's.`);
@@ -1309,7 +1273,7 @@ function getZegMessage(msg, args) {
     if (sendToChannel) {
         destinationChannelId = args[args.length - 1].substring(2, args[args.length - 1].length - 1);
 
-        if (msg.guild.channels.has(destinationChannelId)) {
+        if (msg.guild.channels.cache.has(destinationChannelId)) {
             destinationChannel = getChannel(guild, destinationChannelId);
 
             if (destinationChannel.id == logChannel.id) {
@@ -1381,31 +1345,19 @@ ${commands.misc.zeg}
 -versie
 ${commands.misc.versie}
 
--kokosnoot <gebruikers> [reden] [tijd|tijdstip]
+-kokosnoot <gebruikers> [reden] [tijd|tijdstip|inf]
 ${commands.rolecommands.kokosnoot}
 
 -ontkokosnoot <gebruikers>
 ${commands.rolecommands.ontkokosnoot}
 
--koloniseer <gebruikers> [reden] [tijd|tijdstip]
-${commands.rolecommands.koloniseer}
+-babbelbakverbod <gebruikers> [reden] [tijd|tijdstip|inf]
+${commands.rolecommands.babbelbakverbod}
 
--ontkoloniseer <gebruikers>
-${commands.rolecommands.ontkoloniseer}
+-babbelbaktoelating <gebruikers>
+${commands.rolecommands.babbelbaktoelating}
 
--stamkroegverbod <gebruikers> [reden] [tijd|tijdstip]
-${commands.rolecommands.stamkroegverbod}
-
--stamkroegtoelating <gebruikers>
-${commands.rolecommands.stamkroegtoelating}
-
--emoteloos <gebruikers> [reden] [tijd|tijdstip]
-${commands.rolecommands.emoteloos}
-
--emoterijk <gebruikers>
-${commands.rolecommands.emoterijk}
-
--inhetzonnetje <gebruikers> [reden] [tijd|tijdstip]
+-inhetzonnetje <gebruikers> [reden] [tijd|tijdstip|inf]
 ${commands.rolecommands.inhetzonnetje}
 
 -uithetzonnetje <gebruikers>
@@ -1496,7 +1448,7 @@ function giveRole(msg, args, role, takeMakkersRole) {
 
     for (let i = 0; i < members.length; i++) {
         const el = members[i];
-        let announcement = getAnnouncement(msg.author, el, `${el} heeft nu ${role}`, endTime, role.hexColor, reason);
+        let announcement = getAnnouncement(client.user, el, `${el} heeft nu ${role}`, endTime, role.hexColor, reason);
         let isInternational = false;
 
         if (hasRole(el, role.id)) {
@@ -1509,8 +1461,8 @@ function giveRole(msg, args, role, takeMakkersRole) {
                         endTime = new Date(item.endTime);
                     }
 
-                    announcement = getAnnouncement(getMemberFromId(guild, item.punisher).user, el, `${el} heeft nu ${role}`, endTime, role.hexColor, reason);
-                    schandpaalChannel.fetchMessage(item.announcement).then((message) => {
+                    announcement = getAnnouncement(client.user, el, `${el} heeft nu ${role}`, endTime, role.hexColor, reason);
+                    babbelbakChannel.messages.fetch(item.announcement).then((message) => {
                         message.edit(message.content, announcement);
                     }).catch((err) => {
                         console.error("Error editing announcement: ", err);
@@ -1535,12 +1487,9 @@ function giveRole(msg, args, role, takeMakkersRole) {
             if (hasRole(el, internationalId)) {
                 isInternational = true;
             }
-            if (role == gekoloniseerdRole && hasRole(el, kokosnootId)) {
-                removeRole(el, kokosnootRole);
-
                 rolesDb.forEach((item, index, all) => {
                     if(item.member == el.id && item.role == kokosnootId) {
-                        schandpaalChannel.fetchMessage(item.announcement).then((message) => {
+                        babbelbakChannel.messages.fetch(item.announcement).then((message) => {
                             message.delete().catch((err) => {
                                 console.error(`Could not delete message with ID ${message.id}: `, err);
                             });;
@@ -1553,13 +1502,12 @@ function giveRole(msg, args, role, takeMakkersRole) {
                     }
                 });
             }
+	    
+	    if(msg.channel != moderatieChannel) {
+		sendMessage(msg.channel, announcement);
+	    }
 
-            // Send announcement to channels
-            if (msg.channel != schandpaalChannel) {
-                sendMessage(msg.channel, announcement);
-            }
-
-            schandpaalChannel.send(announcement).then((message) => {
+            moderatieChannel.send(announcement).then((message) => {
                 addToRolesDb(role, el, reason, new Date(), endTime, msg.author, isInternational, message.id);
             }).catch((err) => {
                 console.error("Error posting announcement: ", err);
@@ -1580,7 +1528,6 @@ function giveRole(msg, args, role, takeMakkersRole) {
             }
         }
     }
-}
 
 function getMembersFromMessage(msg, args, role, mode) {
     let tags = getTags(args);
@@ -1832,7 +1779,7 @@ function takeRole(msg, args, role, giveBackRole, announceFreedom) {
                 }
 
                 if (announceFreedom) {
-                    schandpaalChannel.send(`Zeg Makker, ${el.user} is weer onafhankelijk verklaard!`).then((message) => {
+                    babbelbakChannel.send(`Zeg Makker, ${el.user} is weer onafhankelijk verklaard!`).then((message) => {
                         setTimeout(() => {
                             message.delete().catch((err) => {
                                 console.error(`Could not delete message with ID ${message.id}: `, err);
@@ -1843,15 +1790,6 @@ function takeRole(msg, args, role, giveBackRole, announceFreedom) {
                         sendMessage(logChannel, getErrorLog(msg.author, msg.content, `Het bevrijdingsbericht kon niet in de schandpaal gestuurd worden.`));
                     });
                 }
-
-                schandpaalChannel.fetchMessage(item.announcement).then((message) => {
-                    message.delete().catch((err) => {
-                        console.error(`Could not delete message with ID ${message.id}: `, err);
-                    });;
-                }).catch((err) => {
-                    console.error("Error deleting announcement: ", err);
-                    sendMessage(logChannel, getErrorLog(msg.author, msg.content, `De announcement kon niet verwijderd worden.`));
-                });
 
                 all.splice(index, 1);
                 sendMessage(logChannel, getFreeLog(msg.author, el, role));
@@ -2041,7 +1979,7 @@ function dbCleanup(msg) {
         // Removing entry if member is not in guild.
         if (!member) {
             all.splice(index, 1);
-            schandpaalChannel.fetchMessage(item.announcement).then((message) => {
+            babbelbakChannel.messages.fetch(item.announcement).then((message) => {
                 message.delete().catch((err) => {
                     console.error(`Could not delete message with ID ${message.id}: `, err);
                 });;
@@ -2054,7 +1992,7 @@ function dbCleanup(msg) {
         // Removing entry if member doesn't have the role.
         else if (!hasRole(member, item.role)) {
             all.splice(index, 1);
-            schandpaalChannel.fetchMessage(item.announcement).then((message) => {
+            babbelbakChannel.messages.fetch(item.announcement).then((message) => {
                 message.delete().catch((err) => {
                     console.error(`Could not delete message with ID ${message.id}: `, err);
                 });;
